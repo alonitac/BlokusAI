@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!blokus_problems.py
+!README.txt
+!search.py
+
