@@ -82,6 +82,7 @@ def uniform_cost_search(problem):
     """
     Search the node of least total cost first.
     """
+    back_trace = []
     fringe = util.PriorityQueue()
     fringe.push(problem.get_start_state(), 0)
     closed = []
@@ -89,14 +90,16 @@ def uniform_cost_search(problem):
     while not fringe.isEmpty():
         current_board = fringe.pop()
 
-        if got_goal:
-            pass # finished
+        if problem.is_goal_state(current_board):
+            print('Reach Goal: \n{}'.format(current_board))
+            return back_trace
         elif current_board not in closed:
             successors = problem.get_successors(current_board)
             for node in successors:
                 fringe.push(node[0], node[2])
             closed.append(current_board)
     print('cannot solve problem')
+    return back_trace
 
 
 def null_heuristic(state, problem=None):
