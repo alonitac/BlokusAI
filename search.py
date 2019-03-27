@@ -5,6 +5,23 @@ In search.py, you will implement generic search algorithms
 import util
 
 
+class Node:
+    def __init__(self, state, action, parent, cost_so_far):
+        self.action = action
+        self.cost_so_far = cost_so_far
+        self.parent = parent
+        self.state = state
+
+    def get_action_trace_back(self):
+        trace = []
+        node = self
+        while node is not None:
+            trace = [node.action] + trace
+            node = node.parent
+
+        return trace
+
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -49,8 +66,6 @@ class SearchProblem:
         util.raiseNotDefined()
 
 
-
-
 def depth_first_search(problem):
     """
     Search the deepest nodes in the search tree first.
@@ -82,24 +97,7 @@ def uniform_cost_search(problem):
     """
     Search the node of least total cost first.
     """
-    back_trace = []
-    fringe = util.PriorityQueue()
-    fringe.push(problem.get_start_state(), 0)
-    closed = []
-
-    while not fringe.isEmpty():
-        current_board = fringe.pop()
-
-        if problem.is_goal_state(current_board):
-            print('Reach Goal: \n{}'.format(current_board))
-            return back_trace
-        elif current_board not in closed:
-            successors = problem.get_successors(current_board)
-            for node in successors:
-                fringe.push(node[0], node[2])
-            closed.append(current_board)
-    print('cannot solve problem')
-    return back_trace
+    return a_star_search(problem, null_heuristic)
 
 
 def null_heuristic(state, problem=None):
@@ -114,9 +112,30 @@ def a_star_search(problem, heuristic=null_heuristic):
     """
     Search the node that has the lowest combined cost and heuristic first.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    fringe = util.PriorityQueue()
+    start_state = problem.get_start_state()
+    fringe.push(Node(start_state, None, None, 0), heuristic(start_state, problem))
+    closed = []
 
+    while not fringe.isEmpty():
+        current_node = fringe.pop()
+
+        if problem.is_goal_state(current_node.state):
+            print('Reach Goal:\n{}'.format(current_node.state))
+            return current_node.get_action_trace_back()
+        elif current_node.state not in closed:
+            successors = problem.get_successors(current_node.state)
+            for successor, action, step_cost in successors:
+                cost_so_far = current_node.cost_so_far + step_cost
+                fringe.push(
+                    Node(successor, action, current_node, cost_so_far),
+                    cost_so_far + heuristic(successor, problem)
+                )
+
+                closed.append(current_node.state)
+
+    print('Cannot solve the problem')
+    return []
 
 
 # Abbreviations
