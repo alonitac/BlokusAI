@@ -109,8 +109,14 @@ def blokus_corners_heuristic(state, problem):
     your heuristic is *not* consistent, and probably not admissible!  On the other hand,
     inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    tiles = np.matrix(np.where(state.state == 0)).T
+    corners = [(0, 0), (0, state.board_w - 1), (state.board_h - 1, 0), (state.board_w - 1, state.board_h - 1)]
+    total = 0
+    for t in corners:
+        dist = tiles - t  # for matrix notation of Manhattan distance
+        min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+        total += min_dist
+    return total
 
 
 class BlokusCoverProblem(SearchProblem):
@@ -154,15 +160,30 @@ class BlokusCoverProblem(SearchProblem):
 
 
 def blokus_cover_heuristic(state, problem):
-    # TODO: ideally: only look at distance of new tiles if they cover a target (dist 0). but dist 1 would be really bad!
     tiles = np.matrix(np.where(state.state == 0)).T
     total = 0
     for t in problem.targets:
-        dist = tiles - t  # for matrix notation of manhatten distance
-        covered = min(abs(dist[:, 0]) + abs(dist[:, 1]))
-        total += covered
+        dist = tiles - t  # for matrix notation of Manhattan distance
+        min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+        total += min_dist
     return total
 
+
+class Node:
+    def __init__(self, state, action, parent, cost_so_far):
+        self.action = action
+        self.cost_so_far = cost_so_far
+        self.parent = parent
+        self.state = state
+
+    def get_action_trace_back(self):
+        trace = []
+        node = self
+        while node is not None:
+            trace = [node.action] + trace
+            node = node.parent
+
+        return trace
 
 
 class ClosestLocationSearch:
@@ -174,13 +195,72 @@ class ClosestLocationSearch:
     def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=(0, 0)):
         self.expanded = 0
         self.targets = targets.copy()
-        "*** YOUR CODE HERE ***"
+        self.current_target = None
+        self.current_state = None
+        self.board = Board(board_w, board_h, 1, piece_list, starting_point)
+        self.starting_point = starting_point
+        self.is_first_round = True
 
     def get_start_state(self):
         """
         Returns the start state for the search problem
         """
         return self.board
+
+    def get_successors(self, state):
+        """
+        state: Search state
+
+        For a given state, this should return a list of triples,
+        (successor, action, stepCost), where 'successor' is a
+        successor to the current state, 'action' is the action
+        required to get there, and 'stepCost' is the incremental
+        cost of expanding to that successor
+        """
+        # Note that for the search problem, there is only one player - #0
+        self.expanded = self.expanded + 1
+        return [(state.do_move(0, move), move, move.piece.get_num_tiles()) for move in state.get_legal_moves(0)]
+
+
+    def is_goal_state(self, state):
+        return not any([state.get_position(y, x) for x, y in self.targets])
+
+
+    def find_first_target(self):
+        xsp, ysp = self.starting_point
+        dist = np.array([(x - xsp, y - ysp) for x, y in self.targets])
+        manhattan_dist = abs(dist[:, 0]) + abs(dist[:, 1]) # min_dist to target, = 0 if target is covered
+        idx = np.argmin(manhattan_dist)
+        self.current_target = self.targets[idx]
+        del self.targets[idx]
+        print("Found first target:", self.current_target, self.targets)
+
+
+    def find_closest_target(self, state):
+        tiles = np.matrix(np.where(state.state == 0)).T
+        distances = np.zeros(len(self.targets))
+        for i, t in enumerate(self.targets):
+            dist = tiles - t  # for matrix notation of Manhattan distance
+            min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+            distances[i] = min_dist
+        print("Distances to targets: ", distances)
+        idx = np.argmin(distances)
+        print("Choose target with idx ", idx, self.targets[idx])
+        self.current_target = self.targets[idx]
+        print("self.targets before deletion", self.targets)
+        del self.targets[idx]
+        print("self.targets after deletion", self.targets)
+        print("current_target, targets:", self.current_target, self.targets)
+
+
+    def heuristic(self, state):
+        print("heuristic, current target: ", self.current_target)
+        tiles = np.matrix(np.where(state.state == 0)).T
+        dist = tiles - self.current_target  # for matrix notation of Manhattan distance
+        min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+
+        return min_dist
+
 
     def solve(self):
         """
@@ -201,8 +281,46 @@ class ClosestLocationSearch:
 
         return backtrace
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        fringe = util.PriorityQueue()
+        start_state = self.get_start_state()
+        fringe.push(Node(start_state, None, None, 0), 0)
+        closed = []
+        self.find_first_target()
+
+
+        while not fringe.isEmpty():
+            current_node = fringe.pop()
+
+            if self.is_goal_state(current_node.state):
+                print('Reach Goal')
+                return current_node.get_action_trace_back()[1:]
+            elif current_node.state not in closed:
+
+                if self.is_first_round:
+                    self.is_first_round = False
+                else:
+                    h = self.heuristic(current_node.state) # the current node covers the current target --> will choose new target
+                    if h == 0:
+                        print("------------- we covered this target, now we want to find new target: ")
+                        self.find_closest_target(successor)
+
+                successors = self.get_successors(current_node.state)
+                for successor, action, step_cost in successors:
+                    cost_so_far = current_node.cost_so_far + step_cost
+
+                    fringe.push(
+                        Node(successor, action, current_node, cost_so_far),
+                        cost_so_far + self.heuristic(successor)
+                    )
+
+                    closed.append(current_node.state)
+
+        print('Cannot solve the problem')
+        return []
+        #
+        # "*** YOUR CODE HERE ***"
+        # util.raiseNotDefined()
 
 
 
