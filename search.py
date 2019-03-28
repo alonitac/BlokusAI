@@ -67,31 +67,68 @@ class SearchProblem:
 
 
 def depth_first_search(problem):
-    """
-    Search the deepest nodes in the search tree first.
+    fringe = util.Stack()
+    start_state = problem.get_start_state()
+    fringe.push(Node(start_state, None, None, 0))
+    closed = []
+    optimal_actions = []
+    minimal_cost = 1000
 
-    Your search algorithm needs to return a list of actions that reaches
-    the goal. Make sure to implement a graph search algorithm.
+    while not fringe.isEmpty():
+        current_node = fringe.pop()
 
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
+        if problem.is_goal_state(current_node.state):
+            # print('Reach Goal:\n{}'.format(current_node.state))
+            print("Reach Goal")
+            print(current_node.cost_so_far, minimal_cost)
+            if current_node.cost_so_far <= minimal_cost:
+                print(current_node.cost_so_far)
+                optimal_actions = current_node.get_action_trace_back()[1:]
+                minimal_cost = current_node.cost_so_far
+                return optimal_actions   # TODO: only at the end? or keep here for first-goal search?
 
-	print("Start:", problem.get_start_state().state)
-    print("Is the start a goal?", problem.is_goal_state(problem.get_start_state()))
-    print("Start's successors:", problem.get_successors(problem.get_start_state()))
-    """
-    print("Start:", problem.get_start_state().state)
-    print("Is the start a goal?", problem.is_goal_state(problem.get_start_state()))
-    print("Start's successors:", problem.get_successors(problem.get_start_state()))
+        elif current_node.state not in closed:
+            successors = problem.get_successors(current_node.state)
+            for successor, action, step_cost in successors:
+                cost_so_far = current_node.cost_so_far + step_cost
+                fringe.push(Node(successor, action, current_node, cost_so_far))
+                closed.append(current_node.state)
+
+    return optimal_actions
 
 
 def breadth_first_search(problem):
     """
     Search the shallowest nodes in the search tree first.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    fringe = util.Queue()
+    start_state = problem.get_start_state()
+    fringe.push(Node(start_state, None, None, 0))
+    closed = []
+    optimal_actions = []
+    minimal_cost = 1000
 
+    while not fringe.isEmpty():
+        current_node = fringe.pop()
+
+        if problem.is_goal_state(current_node.state):
+            # print('Reach Goal:\n{}'.format(current_node.state))
+            print("Reach Goal")
+            print(current_node.cost_so_far, minimal_cost)
+            if current_node.cost_so_far <= minimal_cost:
+                print(current_node.cost_so_far)
+                optimal_actions = current_node.get_action_trace_back()[1:]
+                minimal_cost = current_node.cost_so_far
+                return optimal_actions  # TODO: only at the end? or keep here for first-goal search?
+
+        elif current_node.state not in closed:
+            successors = problem.get_successors(current_node.state)
+            for successor, action, step_cost in successors:
+                cost_so_far = current_node.cost_so_far + step_cost
+                fringe.push(Node(successor, action, current_node, cost_so_far))
+                closed.append(current_node.state)
+
+    return optimal_actions
 
 def uniform_cost_search(problem):
     """
