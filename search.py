@@ -151,15 +151,16 @@ def a_star_search(problem, heuristic=null_heuristic):
     """
     fringe = util.PriorityQueue()
     start_state = problem.get_start_state()
-    fringe.push(Node(start_state, None, None, 0), heuristic(start_state, problem))
+    fringe.push(Node(start_state, None, None, 0), 0)  # heuristic(start_state, problem))
+                                                      # otherwise problem to calculate f
     closed = []
 
     while not fringe.isEmpty():
         current_node = fringe.pop()
 
         if problem.is_goal_state(current_node.state):
-            print('Reach Goal:\n{}'.format(current_node.state))
-            return current_node.get_action_trace_back()
+            print('Reach Goal')
+            return current_node.get_action_trace_back()[1:]
         elif current_node.state not in closed:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
