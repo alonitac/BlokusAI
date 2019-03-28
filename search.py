@@ -149,6 +149,9 @@ def a_star_search(problem, heuristic=null_heuristic):
     """
     Search the node that has the lowest combined cost and heuristic first.
     """
+    # TODO: somehow the astar search runs twice... for example the command
+    #       python3 game.py -p small_set.txt -f astar -s 4 7 -H null_heuristic -z cover -x 3 3 "[(2,2), (3, 3), (3, 6)]"
+    #       it finds a goal state and shows the board (extra window with red tiles) and then it runs again.
     fringe = util.PriorityQueue()
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0), 0)  # heuristic(start_state, problem))

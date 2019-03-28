@@ -1,6 +1,7 @@
 from board import Board
 from search import SearchProblem, ucs
 import util
+import numpy as np
 
 
 class BlokusFillProblem(SearchProblem):
@@ -153,8 +154,15 @@ class BlokusCoverProblem(SearchProblem):
 
 
 def blokus_cover_heuristic(state, problem):
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # TODO: ideally: only look at distance of new tiles if they cover a target (dist 0). but dist 1 would be really bad!
+    tiles = np.matrix(np.where(state.state == 0)).T
+    total = 0
+    for t in problem.targets:
+        dist = tiles - t  # for matrix notation of manhatten distance
+        covered = min(abs(dist[:, 0]) + abs(dist[:, 1]))
+        total += covered
+    return total
+
 
 
 class ClosestLocationSearch:
