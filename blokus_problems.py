@@ -195,6 +195,7 @@ class ClosestLocationSearch:
     def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=(0, 0)):
         self.expanded = 0
         self.targets = targets.copy()
+        self.reduced_targets = targets.copy()
         self.current_target = None
         self.current_state = None
         self.board = Board(board_w, board_h, 1, piece_list, starting_point)
@@ -228,29 +229,29 @@ class ClosestLocationSearch:
 
     def find_first_target(self):
         xsp, ysp = self.starting_point
-        dist = np.array([(x - xsp, y - ysp) for x, y in self.targets])
+        dist = np.array([(x - xsp, y - ysp) for x, y in self.reduced_targets])
         manhattan_dist = abs(dist[:, 0]) + abs(dist[:, 1]) # min_dist to target, = 0 if target is covered
         idx = np.argmin(manhattan_dist)
-        self.current_target = self.targets[idx]
-        del self.targets[idx]
-        print("Found first target:", self.current_target, self.targets)
+        self.current_target = self.reduced_targets[idx]
+        del self.reduced_targets[idx]
+        print("Found first target:", self.current_target, self.reduced_targets)
 
 
     def find_closest_target(self, state):
         tiles = np.matrix(np.where(state.state == 0)).T
-        distances = np.zeros(len(self.targets))
-        for i, t in enumerate(self.targets):
+        distances = np.zeros(len(self.reduced_targets))
+        for i, t in enumerate(self.reduced_targets):
             dist = tiles - t  # for matrix notation of Manhattan distance
             min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
             distances[i] = min_dist
         print("Distances to targets: ", distances)
         idx = np.argmin(distances)
-        print("Choose target with idx ", idx, self.targets[idx])
-        self.current_target = self.targets[idx]
-        print("self.targets before deletion", self.targets)
-        del self.targets[idx]
-        print("self.targets after deletion", self.targets)
-        print("current_target, targets:", self.current_target, self.targets)
+        print("Choose target with idx ", idx, self.reduced_targets[idx])
+        self.current_target = self.reduced_targets[idx]
+        print("self.reduced_targets before deletion", self.reduced_targets)
+        del self.reduced_targets[idx]
+        print("self.reduced_targets after deletion", self.reduced_targets)
+        print("current_target, targets:", self.current_target, self.reduced_targets)
 
 
     def heuristic(self, state):
