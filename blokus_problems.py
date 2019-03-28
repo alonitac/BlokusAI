@@ -125,7 +125,7 @@ class BlokusCoverProblem(SearchProblem):
         return self.board
 
     def is_goal_state(self, state):
-        return not any([state.get_position(x, y) for x, y in self.targets])
+        return not any([state.get_position(y, x) for x, y in self.targets])
 
     def get_successors(self, state):
         """
