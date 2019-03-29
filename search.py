@@ -15,7 +15,7 @@ class Node:
     def get_action_trace_back(self):
         trace = []
         node = self
-        while node is not None:
+        while node.parent is not None:
             trace = [node.action] + trace
             node = node.parent
 
@@ -71,30 +71,20 @@ def depth_first_search(problem):
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0))
     closed = {}
-    optimal_actions = []
-    minimal_cost = 1000
 
     while not fringe.isEmpty():
         current_node = fringe.pop()
 
         if problem.is_goal_state(current_node.state):
-            # print('Reach Goal:\n{}'.format(current_node.state))
             print("Reach Goal")
-            print(current_node.cost_so_far, minimal_cost)
-            if current_node.cost_so_far <= minimal_cost:
-                print(current_node.cost_so_far)
-                optimal_actions = current_node.get_action_trace_back()[1:]
-                minimal_cost = current_node.cost_so_far
-                return optimal_actions   # TODO: only at the end? or keep here for first-goal search?
-
+            return current_node.get_action_trace_back()
         elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
                 fringe.push(Node(successor, action, current_node, cost_so_far))
                 closed[current_node.state] = True
-
-    return optimal_actions
+    return []
 
 
 def breadth_first_search(problem):
@@ -105,30 +95,20 @@ def breadth_first_search(problem):
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0))
     closed = {}
-    optimal_actions = []
-    minimal_cost = 1000
 
     while not fringe.isEmpty():
         current_node = fringe.pop()
 
         if problem.is_goal_state(current_node.state):
-            # print('Reach Goal:\n{}'.format(current_node.state))
             print("Reach Goal")
-            print(current_node.cost_so_far, minimal_cost)
-            if current_node.cost_so_far <= minimal_cost:
-                print(current_node.cost_so_far)
-                optimal_actions = current_node.get_action_trace_back()[1:]
-                minimal_cost = current_node.cost_so_far
-                return optimal_actions  # TODO: only at the end? or keep here for first-goal search?
-
+            return current_node.get_action_trace_back()
         elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
                 fringe.push(Node(successor, action, current_node, cost_so_far))
                 closed[current_node.state] = True
-
-    return optimal_actions
+    return []
 
 
 def uniform_cost_search(problem):
@@ -160,7 +140,7 @@ def a_star_search(problem, heuristic=null_heuristic):
 
         if problem.is_goal_state(current_node.state):
             print('Reach Goal')
-            return current_node.get_action_trace_back()[1:]
+            return current_node.get_action_trace_back()
         elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:

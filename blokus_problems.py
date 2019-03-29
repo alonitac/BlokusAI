@@ -1,5 +1,5 @@
 from board import Board
-from search import SearchProblem, ucs
+from search import SearchProblem, ucs, Node
 import util
 import numpy as np
 
@@ -155,8 +155,7 @@ class BlokusCoverProblem(SearchProblem):
         This method returns the total cost of a particular sequence of actions.  The sequence must
         be composed of legal moves
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return sum([move.piece.get_num_tiles() for move in actions])
 
 
 def blokus_cover_heuristic(state, problem):
@@ -167,23 +166,6 @@ def blokus_cover_heuristic(state, problem):
         min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
         total += min_dist
     return total
-
-
-class Node:
-    def __init__(self, state, action, parent, cost_so_far):
-        self.action = action
-        self.cost_so_far = cost_so_far
-        self.parent = parent
-        self.state = state
-
-    def get_action_trace_back(self):
-        trace = []
-        node = self
-        while node is not None:
-            trace = [node.action] + trace
-            node = node.parent
-
-        return trace
 
 
 class ClosestLocationSearch:
@@ -288,7 +270,6 @@ class ClosestLocationSearch:
         fringe.push(Node(start_state, None, None, 0), 0)
         closed = []
         self.find_first_target()
-
 
         while not fringe.isEmpty():
             current_node = fringe.pop()
