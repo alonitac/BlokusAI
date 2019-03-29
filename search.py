@@ -70,7 +70,7 @@ def depth_first_search(problem):
     fringe = util.Stack()
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0))
-    closed = []
+    closed = {}
     optimal_actions = []
     minimal_cost = 1000
 
@@ -87,12 +87,12 @@ def depth_first_search(problem):
                 minimal_cost = current_node.cost_so_far
                 return optimal_actions   # TODO: only at the end? or keep here for first-goal search?
 
-        elif current_node.state not in closed:
+        elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
                 fringe.push(Node(successor, action, current_node, cost_so_far))
-                closed.append(current_node.state)
+                closed[current_node.state] = True
 
     return optimal_actions
 
@@ -104,7 +104,7 @@ def breadth_first_search(problem):
     fringe = util.Queue()
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0))
-    closed = []
+    closed = {}
     optimal_actions = []
     minimal_cost = 1000
 
@@ -121,14 +121,15 @@ def breadth_first_search(problem):
                 minimal_cost = current_node.cost_so_far
                 return optimal_actions  # TODO: only at the end? or keep here for first-goal search?
 
-        elif current_node.state not in closed:
+        elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
                 fringe.push(Node(successor, action, current_node, cost_so_far))
-                closed.append(current_node.state)
+                closed[current_node.state] = True
 
     return optimal_actions
+
 
 def uniform_cost_search(problem):
     """
@@ -149,13 +150,9 @@ def a_star_search(problem, heuristic=null_heuristic):
     """
     Search the node that has the lowest combined cost and heuristic first.
     """
-    # TODO: somehow the astar search runs twice... for example the command
-    #       python3 game.py -p small_set.txt -f astar -s 4 7 -H null_heuristic -z cover -x 3 3 "[(2,2), (3, 3), (3, 6)]"
-    #       it finds a goal state and shows the board (extra window with red tiles) and then it runs again.
     fringe = util.PriorityQueue()
     start_state = problem.get_start_state()
-    fringe.push(Node(start_state, None, None, 0), 0)  # heuristic(start_state, problem))
-                                                      # otherwise problem to calculate f
+    fringe.push(Node(start_state, None, None, 0), heuristic(start_state, problem))
     closed = {}
 
     while not fringe.isEmpty():
