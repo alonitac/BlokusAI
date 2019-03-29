@@ -286,9 +286,8 @@ class ClosestLocationSearch:
         fringe = util.PriorityQueue()
         start_state = self.get_start_state()
         fringe.push(Node(start_state, None, None, 0), 0)
-        closed = []
+        closed = dict()
         self.find_first_target()
-
 
         while not fringe.isEmpty():
             current_node = fringe.pop()
@@ -296,7 +295,7 @@ class ClosestLocationSearch:
             if self.is_goal_state(current_node.state):
                 print('Reach Goal')
                 return current_node.get_action_trace_back()[1:]
-            elif current_node.state not in closed:
+            elif closed.get(current_node.state) is None:
 
                 if self.is_first_round:
                     self.is_first_round = False
@@ -315,7 +314,7 @@ class ClosestLocationSearch:
                         cost_so_far + self.heuristic(successor)
                     )
 
-                    closed.append(current_node.state)
+                    closed[current_node.state] = True
 
         print('Cannot solve the problem')
         return []

@@ -70,7 +70,7 @@ def depth_first_search(problem):
     fringe = util.Stack()
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0))
-    closed = []
+    closed = dict()
     optimal_actions = []
     minimal_cost = 1000
 
@@ -85,14 +85,14 @@ def depth_first_search(problem):
                 print(current_node.cost_so_far)
                 optimal_actions = current_node.get_action_trace_back()[1:]
                 minimal_cost = current_node.cost_so_far
-                return optimal_actions   # TODO: only at the end? or keep here for first-goal search?
+                # return optimal_actions   # TODO: only at the end? or keep here for first-goal search?
 
-        elif current_node.state not in closed:
+        elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
                 fringe.push(Node(successor, action, current_node, cost_so_far))
-                closed.append(current_node.state)
+                closed[current_node.state] = True
 
     return optimal_actions
 
@@ -104,7 +104,7 @@ def breadth_first_search(problem):
     fringe = util.Queue()
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0))
-    closed = []
+    closed = dict()
     optimal_actions = []
     minimal_cost = 1000
 
@@ -119,14 +119,14 @@ def breadth_first_search(problem):
                 print(current_node.cost_so_far)
                 optimal_actions = current_node.get_action_trace_back()[1:]
                 minimal_cost = current_node.cost_so_far
-                return optimal_actions  # TODO: only at the end? or keep here for first-goal search?
+                # return optimal_actions  # TODO: only at the end? or keep here for first-goal search?
 
-        elif current_node.state not in closed:
+        elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
                 fringe.push(Node(successor, action, current_node, cost_so_far))
-                closed.append(current_node.state)
+                closed[current_node.state] = True
 
     return optimal_actions
 
