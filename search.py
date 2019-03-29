@@ -156,7 +156,7 @@ def a_star_search(problem, heuristic=null_heuristic):
     start_state = problem.get_start_state()
     fringe.push(Node(start_state, None, None, 0), 0)  # heuristic(start_state, problem))
                                                       # otherwise problem to calculate f
-    closed = []
+    closed = {}
 
     while not fringe.isEmpty():
         current_node = fringe.pop()
@@ -164,7 +164,7 @@ def a_star_search(problem, heuristic=null_heuristic):
         if problem.is_goal_state(current_node.state):
             print('Reach Goal')
             return current_node.get_action_trace_back()[1:]
-        elif current_node.state not in closed:
+        elif closed.get(current_node.state) is None:
             successors = problem.get_successors(current_node.state)
             for successor, action, step_cost in successors:
                 cost_so_far = current_node.cost_so_far + step_cost
@@ -173,7 +173,7 @@ def a_star_search(problem, heuristic=null_heuristic):
                     cost_so_far + heuristic(successor, problem)
                 )
 
-                closed.append(current_node.state)
+                closed[current_node.state] = True
 
     print('Cannot solve the problem')
     return []
