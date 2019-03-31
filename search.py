@@ -132,7 +132,7 @@ def a_star_search(problem, heuristic=null_heuristic):
     """
     fringe = util.PriorityQueue()
     start_state = problem.get_start_state()
-    fringe.push(Node(start_state, None, None, 0), heuristic(start_state, problem))
+    fringe.push(Node(start_state, None, None, 0), 1)
     closed = {}
 
     while not fringe.isEmpty():
