@@ -6,11 +6,12 @@ import util
 
 
 class Node:
-    def __init__(self, state, action, parent, cost_so_far):
+    def __init__(self, state, action, parent, cost_so_far, params={}):
         self.action = action
         self.cost_so_far = cost_so_far
         self.parent = parent
         self.state = state
+        self.params = params
 
     def get_action_trace_back(self):
         trace = []
@@ -132,7 +133,7 @@ def a_star_search(problem, heuristic=null_heuristic):
     """
     fringe = util.PriorityQueue()
     start_state = problem.get_start_state()
-    fringe.push(Node(start_state, None, None, 0), heuristic(start_state, problem))
+    fringe.push(Node(start_state, None, None, 0), 0)
     closed = {}
 
     while not fringe.isEmpty():

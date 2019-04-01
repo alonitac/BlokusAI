@@ -1,5 +1,5 @@
 from board import Board
-from search import SearchProblem, ucs, Node
+from search import SearchProblem, Node
 import util
 import numpy as np
 
@@ -67,10 +67,10 @@ class BlokusCornersProblem(SearchProblem):
         return self.board
 
     def is_goal_state(self, state):
-        return not any([state.get_position(0, 0),
+        return -1 not in [state.get_position(0, 0),
                         state.get_position(0, state.board_w - 1),
                         state.get_position(state.board_h - 1, 0),
-                        state.get_position(state.board_h - 1, state.board_w - 1)])
+                        state.get_position(state.board_h - 1, state.board_w - 1)]
 
     def get_successors(self, state):
         """
@@ -131,7 +131,7 @@ class BlokusCoverProblem(SearchProblem):
         return self.board
 
     def is_goal_state(self, state):
-        return not any([state.get_position(y, x) for x, y in self.targets])
+        return -1 not in [state.get_position(y, x) for x, y in self.targets]
 
     def get_successors(self, state):
         """
@@ -172,16 +172,11 @@ class ClosestLocationSearch:
     In this problem you have to cover all given positions on the board,
     but the objective is speed, not optimality.
     """
-
-    def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=(0, 0)):
-        self.expanded = 0
+    def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=[(0, 0)]):
         self.targets = targets.copy()
-        self.reduced_targets = targets.copy()
-        self.current_target = None
-        self.current_state = None
+        self.expanded = 0
         self.board = Board(board_w, board_h, 1, piece_list, starting_point)
         self.starting_point = starting_point
-        self.is_first_round = True
 
     def get_start_state(self):
         """
@@ -203,46 +198,43 @@ class ClosestLocationSearch:
         self.expanded = self.expanded + 1
         return [(state.do_move(0, move), move, move.piece.get_num_tiles()) for move in state.get_legal_moves(0)]
 
-
     def is_goal_state(self, state):
-        return not any([state.get_position(y, x) for x, y in self.targets])
+        return -1 not in [state.get_position(y, x) for x, y in self.targets]
 
-
-    def find_first_target(self):
-        xsp, ysp = self.starting_point
-        dist = np.array([(x - xsp, y - ysp) for x, y in self.reduced_targets])
-        manhattan_dist = abs(dist[:, 0]) + abs(dist[:, 1]) # min_dist to target, = 0 if target is covered
-        idx = np.argmin(manhattan_dist)
-        self.current_target = self.reduced_targets[idx]
-        del self.reduced_targets[idx]
-        print("Found first target:", self.current_target, self.reduced_targets)
-
-
-    def find_closest_target(self, state):
-        tiles = np.matrix(np.where(state.state == 0)).T
-        distances = np.zeros(len(self.reduced_targets))
-        for i, t in enumerate(self.reduced_targets):
-            dist = tiles - t  # for matrix notation of Manhattan distance
-            min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
-            distances[i] = min_dist
-        print("Distances to targets: ", distances)
-        idx = np.argmin(distances)
-        print("Choose target with idx ", idx, self.reduced_targets[idx])
-        self.current_target = self.reduced_targets[idx]
-        print("self.reduced_targets before deletion", self.reduced_targets)
-        del self.reduced_targets[idx]
-        print("self.reduced_targets after deletion", self.reduced_targets)
-        print("current_target, targets:", self.current_target, self.reduced_targets)
-
+    # def find_first_target(self):
+    #     xsp, ysp = self.starting_point
+    #     dist = np.array([(x - xsp, y - ysp) for x, y in self.reduced_targets])
+    #     manhattan_dist = abs(dist[:, 0]) + abs(dist[:, 1]) # min_dist to target, = 0 if target is covered
+    #     idx = np.argmin(manhattan_dist)
+    #     self.current_target = self.reduced_targets[idx]
+    #     del self.reduced_targets[idx]
+    #     print("Found first target:", self.current_target, self.reduced_targets)
+    #
+    #
+    # def find_closest_target(self, state):
+    #     tiles = np.matrix(np.where(state.state == 0)).T
+    #     distances = np.zeros(len(self.reduced_targets))
+    #     for i, t in enumerate(self.reduced_targets):
+    #         dist = tiles - t  # for matrix notation of Manhattan distance
+    #         min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+    #         distances[i] = min_dist
+    #     print("Distances to targets: ", distances)
+    #     idx = np.argmin(distances)
+    #     print("Choose target with idx ", idx, self.reduced_targets[idx])
+    #     self.current_target = self.reduced_targets[idx]
+    #     print("self.reduced_targets before deletion", self.reduced_targets)
+    #     del self.reduced_targets[idx]
+    #     print("self.reduced_targets after deletion", self.reduced_targets)
+    #     print("current_target, targets:", self.current_target, self.reduced_targets)
+    def find_closest_target(self, state, x, y):
+        # check for non reached targets
+        # computer the nearest to (x, y)
+        return 0, 0
 
     def heuristic(self, state):
-        print("heuristic, current target: ", self.current_target)
         tiles = np.matrix(np.where(state.state == 0)).T
-        dist = tiles - self.current_target  # for matrix notation of Manhattan distance
-        min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
-
-        return min_dist
-
+        dist = tiles - state.params['target']
+        return min(abs(dist[:, 0]) + abs(dist[:, 1]))
 
     def solve(self):
         """
@@ -263,46 +255,34 @@ class ClosestLocationSearch:
 
         return backtrace
         """
-
         fringe = util.PriorityQueue()
         start_state = self.get_start_state()
-        fringe.push(Node(start_state, None, None, 0), 0)
-        closed = []
-        self.find_first_target()
+        fringe.push(Node(start_state, None, None, 0,
+                         params={'target:': self.find_closest_target(start_state, self.starting_point)}), 0)
+        closed = {}
 
         while not fringe.isEmpty():
             current_node = fringe.pop()
 
             if self.is_goal_state(current_node.state):
                 print('Reach Goal')
-                return current_node.get_action_trace_back()[1:]
-            elif current_node.state not in closed:
-
-                if self.is_first_round:
-                    self.is_first_round = False
-                else:
-                    h = self.heuristic(current_node.state) # the current node covers the current target --> will choose new target
-                    if h == 0:
-                        print("------------- we covered this target, now we want to find new target: ")
-                        self.find_closest_target(successor)
-
+                return current_node.get_action_trace_back()
+            elif closed.get(current_node.state) is None:
+                x, y = current_node.params['target']
+                if current_node.state.get_position(y, x) != -1:
+                    x, y = self.find_closest_target(current_node.state, (x, y))
                 successors = self.get_successors(current_node.state)
                 for successor, action, step_cost in successors:
                     cost_so_far = current_node.cost_so_far + step_cost
-
                     fringe.push(
-                        Node(successor, action, current_node, cost_so_far),
+                        Node(successor, action, current_node, cost_so_far, params={'target': (x, y)}),
                         cost_so_far + self.heuristic(successor)
                     )
 
-                    closed.append(current_node.state)
+                    closed[current_node.state] = True
 
         print('Cannot solve the problem')
         return []
-        #
-        # "*** YOUR CODE HERE ***"
-        # util.raiseNotDefined()
-
 
 
 class MiniContestSearch:
