@@ -34,20 +34,40 @@ heuristic_value = sum of minimum distances
 
 ## blokus_cover_heuristic
 
-The cover heuristic works in the same way as the corner heuristic only that now the targets are variable and not fixed
-at the board.
+The cover heuristic works in the same way like the corner heuristic only that now the targets are variable
+(amount and location) and not given through the board (where targets = corners).
 
 
+## Sub-Optimal Search
 
--p small_set.txt -f astar -s 10 10 -H blokus_cover_heuristic -z cover -x 3 3 "[(2,2), (5, 5), (6, 7)]"
+Our sub-optimal search is based on an A* search with an heuristic as described in blokus_cover_heuristic.
+Only now instead of aiming to get closer to all targets per move (which means calculate the heuristic and consider all
+targets), we are only interested in getting closer to the one target that is the closest (calculate heuristic for closest
+target).
+If the target is covered, we find a new closest target and move towards this one. This is repeated until all targets
+are covered.
 
--p small_set.txt -f astar -s 8 8 -H blokus_cover_heuristic -z cover -x 3 3 "[(0,8), (8, 0), (8, 8)]"
+With this method we get the results (expanded nodes, cost):
+
+# TODO: need to change values
+| command | Sub-Optimal | Exercise sheet | BlokusCoverProblem |
+| ------- | ----------- | -------------- | ------------------ |
+| 1       | (4, 13)     | (21, 9)        | (85, 8)            |
+| 2       | (8, 11)     | (23, 6)        | (16, 6)            |
+
+And this is exactly what we wanted to achieve with this algorithm. Compared to the optimal solution (BlokusCoverProblem),
+we get a drastic reduction in the expanded nodes, but with the trait-off of a higher cost.
 
 
--p valid_pieces.txt -s 10 10 -z sub-optimal -x 7 7 "[(5,5), (8,8), (4,9)]"
+## Mini Contest
 
-(4, 13) l (21, 9)
+For the Mini Contest we use A* search and the heuristics as described in blokus_cover_heuristics.
+Compared to Sub-Optimal Search we now want to find the optimal solution that covers ALL targets.
 
--p valid_pieces.txt -s 10 10 -z sub-optimal -x 5 5 "[(3,4), (6,6), (7,5)]"
-
-(8, 11) l (23, 6)
+In order to prune the search tree at least a little bit, we don't look at states anymore that were already evaluated
+in a symmetric form.
+Therefore for every state we first create a dictionary of its 8 variations (rotate (0, 90, 180, 270 Degrees),
+flip horizontally and rotate again). Before the state is evaluated we first check if one of the symmetries were already
+evaluated, if so we do not have to do it again.
+To keep the dictionary of visited states small, we only save one of the state representatives, which should result in
+a shorter lookup time in the future.
