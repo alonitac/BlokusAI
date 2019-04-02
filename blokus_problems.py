@@ -165,6 +165,10 @@ class BlokusCoverProblem(SearchProblem):
 
 
 def blokus_cover_heuristic(state, problem):
+    """
+    Returns the heuristic value to a given state.
+    See the description of the heuristic in README.txt
+    """
     tiles = np.matrix(np.where(state.state == 0)).T
     total = 0
     for target in problem.targets:

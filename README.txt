@@ -50,11 +50,10 @@ are covered.
 
 With this method we get the results (expanded nodes, cost):
 
-# TODO: need to change values
 | command | Sub-Optimal | Exercise sheet | BlokusCoverProblem |
 | ------- | ----------- | -------------- | ------------------ |
-| 1       | (4, 13)     | (21, 9)        | (85, 8)            |
-| 2       | (8, 11)     | (23, 6)        | (16, 6)            |
+| 1       | (8, 9)      | (21, 9)        | (85, 8)            |
+| 2       | (8, 9)      | (23, 6)        | (16, 6)            |
 
 And this is exactly what we wanted to achieve with this algorithm. Compared to the optimal solution (BlokusCoverProblem),
 we get a drastic reduction in the expanded nodes, but with the trait-off of a higher cost.
