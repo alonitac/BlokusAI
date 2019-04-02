@@ -229,6 +229,8 @@ class ClosestLocationSearch:
 
     def find_closest_target(self, state, starting_point):
         remaining_targets = [(x, y) for x, y in self.targets if state.get_position(y, x) == -1]
+        if not remaining_targets:
+            return -1, -1
         distances = np.zeros(len(remaining_targets))
         for i, target in enumerate(remaining_targets):
             distance_components = (starting_point[0] - target[0], starting_point[1] - target[1])
@@ -237,11 +239,10 @@ class ClosestLocationSearch:
         idx = np.argmin(distances)
         return remaining_targets[idx]
 
-
     def heuristic(self, state, target):
         tiles = np.matrix(np.where(state.state == 0)).T
         dist = tiles - target
-        return min(abs(dist[:, 0]) + abs(dist[:, 1]))
+        return int(min(abs(dist[:, 0]) + abs(dist[:, 1])))
 
     def solve(self):
         """
@@ -271,19 +272,22 @@ class ClosestLocationSearch:
         while not fringe.isEmpty():
             current_node = fringe.pop()
 
-            if self.is_goal_state(current_node.state):
-                print('Reach Goal')
-                return current_node.get_action_trace_back()
-            elif closed.get(current_node.state) is None:
+            if closed.get(current_node.state) is None:
                 x, y = current_node.params['target']
-                if current_node.state.get_position(y, x) != -1:
-                    x, y = self.find_closest_target(current_node.state, (x, y))
                 successors = self.get_successors(current_node.state)
                 for successor, action, step_cost in successors:
                     cost_so_far = current_node.cost_so_far + step_cost
+                    successor_target = (x, y)
+                    if successor.get_position(y, x) != -1:
+                        successor_target = self.find_closest_target(successor, (x, y))
+                        cost_so_far = 0
+                        if successor_target == (-1, -1):
+                            return current_node.get_action_trace_back() +[action]
+
                     fringe.push(
-                        Node(successor, action, current_node, cost_so_far, params={'target': (x, y)}),
-                        cost_so_far + self.heuristic(successor, (x, y))
+                        Node(successor, action, current_node,
+                             cost_so_far, params={'target': successor_target}),
+                        cost_so_far + self.heuristic(successor, successor_target)
                     )
 
                     closed[current_node.state] = True
