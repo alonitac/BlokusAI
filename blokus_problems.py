@@ -98,9 +98,31 @@ class BlokusCornersProblem(SearchProblem):
 
 
 def blokus_corners_heuristic(state, problem):
-    problem.targets = [(0, 0), (0, state.board_w - 1), (state.board_h - 1, 0), (state.board_w - 1, state.board_h - 1)]
-    return blokus_cover_heuristic(state, problem)
+    tiles = np.matrix(np.where(state.state == 0)).T
+    corners = [(0, 0), (0, state.board_w - 1), (state.board_h - 1, 0), (state.board_w - 1, state.board_h - 1)]
+    total = 0
+    for target in corners:
+        distance_components = abs(tiles - target)  # for matrix notation of Manhattan distance
+        manhattan_dist = distance_components[:, 0] + distance_components[:, 1]
+        md_array = np.squeeze(np.array(manhattan_dist))
+        min_dist = np.min(manhattan_dist)
 
+        condition = np.matrix(np.where(md_array == min_dist)).T
+        min_components = distance_components[condition].tolist()
+
+        if min_dist == 1:
+            min_dist = float(np.inf)
+        elif min_dist > 1:
+            if any(t in min_components for t in [[[min_dist, 0]], [[0, min_dist]]]):
+                min_dist += 1
+            else:
+                min_dist -= 1
+        else:
+            min_dist = float(min_dist)
+
+        total += min_dist
+
+    return total
 
 
 class BlokusCoverProblem(SearchProblem):
@@ -213,10 +235,24 @@ class ClosestLocationSearch:
         idx = np.argmin(distances)
         return remaining_targets[idx]
 
-    def heuristic(self, state, problem):
+    def heuristic(self, state, target):
         tiles = np.matrix(np.where(state.state == 0)).T
-        dist = tiles - self.target
-        return int(min(abs(dist[:, 0]) + abs(dist[:, 1])))
+        distance_component = abs(tiles - target)  # for matrix notation of Manhattan distance
+        manhattan_dist = distance_component[:, 0] + distance_component[:, 1]
+        md_array = np.squeeze(np.array(manhattan_dist))
+        min_dist = np.min(manhattan_dist)
+        condition = np.matrix(np.where(md_array == min_dist)).T
+        min_components = distance_component[condition].tolist()
+
+        if min_dist == 1:
+            min_dist = float(np.inf)
+
+        elif min_dist > 1:
+            if any(t in min_components for t in [[min_dist, 0], [0, min_dist]]):
+                min_dist += 1
+            else:
+                min_dist -= 1
+        return min_dist
 
     def solve(self):
         """
