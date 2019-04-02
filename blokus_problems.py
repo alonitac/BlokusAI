@@ -1,5 +1,5 @@
 from board import Board
-from search import SearchProblem, Node
+from search import SearchProblem, Node, a_star_search
 import util
 import numpy as np
 
@@ -207,6 +207,8 @@ class ClosestLocationSearch:
         self.expanded = 0
         self.board = Board(board_w, board_h, 1, piece_list, starting_point)
         self.starting_point = starting_point
+        self.target = self.find_closest_target(self.board, self.starting_point)
+        self.clean_board = Board(board_w, board_h, 1, piece_list, starting_point)
 
     def get_start_state(self):
         """
@@ -242,25 +244,10 @@ class ClosestLocationSearch:
         idx = np.argmin(distances)
         return remaining_targets[idx]
 
-    def heuristic(self, state, target):
+    def heuristic(self, state, problem):
         tiles = np.matrix(np.where(state.state == 0)).T
-        distance_component = abs(tiles - target)  # for matrix notation of Manhattan distance
-        manhattan_dist = distance_component[:, 0] + distance_component[:, 1]
-        md_array = np.squeeze(np.array(manhattan_dist))
-        min_dist = np.min(manhattan_dist)
-        condition = np.matrix(np.where(md_array == min_dist)).T
-        min_components = distance_component[condition].tolist()
-
-        if min_dist == 1:
-            min_dist = float(np.inf)
-
-        elif min_dist > 1:
-            if any(t in min_components for t in [[min_dist, 0], [0, min_dist]]):
-                min_dist += 1
-            else:
-                min_dist -= 1
-
-        return min_dist
+        dist = tiles - self.target
+        return int(min(abs(dist[:, 0]) + abs(dist[:, 1])))
 
     def solve(self):
         """
@@ -285,6 +272,9 @@ class ClosestLocationSearch:
         while not fringe.isEmpty():
             current_node = fringe.pop()
 
+            if self.is_goal_state(current_node.state):
+                print('Reach Goal')
+                return current_node.get_action_trace_back()
             if closed.get(current_node.state) is None:
                 x, y = current_node.params['target']
                 successors = self.get_successors(current_node.state)
@@ -293,7 +283,7 @@ class ClosestLocationSearch:
                     successor_target = (x, y)
                     if successor.get_position(y, x) != -1:
                         successor_target = self.find_closest_target(successor, (x, y))
-                        cost_so_far = 0
+                        cost_so_far = step_cost
                         if successor_target == (-1, -1):
                             return current_node.get_action_trace_back() + [action]
 
