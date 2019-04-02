@@ -56,7 +56,8 @@ class BlokusFillProblem(SearchProblem):
 # This portion is incomplete.  Time to write code!  #
 #####################################################
 class BlokusCornersProblem(SearchProblem):
-    def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0)):
+    def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=[(0, 0)]):
+        self.targets = targets.copy()
         self.expanded = 0
         self.board = Board(board_w, board_h, 1, piece_list, starting_point)
 
@@ -97,41 +98,9 @@ class BlokusCornersProblem(SearchProblem):
 
 
 def blokus_corners_heuristic(state, problem):
-    """
-    Your heuristic for the BlokusCornersProblem goes here.
+    problem.targets = [(0, 0), (0, state.board_w - 1), (state.board_h - 1, 0), (state.board_w - 1, state.board_h - 1)]
+    return blokus_cover_heuristic(state, problem)
 
-    This heuristic must be consistent to ensure correctness.  First, try to come up
-    with an admissible heuristic; almost all admissible heuristics will be consistent
-    as well.
-
-    If using A* ever finds a solution that is worse uniform cost search finds,
-    your heuristic is *not* consistent, and probably not admissible!  On the other hand,
-    inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
-    """
-    tiles = np.matrix(np.where(state.state == 0)).T
-    corners = [(0, 0), (0, state.board_w - 1), (state.board_h - 1, 0), (state.board_w - 1, state.board_h - 1)]
-    total = 0
-    for target in corners:
-        distance_components = abs(tiles - target)  # for matrix notation of Manhattan distance
-        manhattan_dist = distance_components[:, 0] + distance_components[:, 1]
-        md_array = np.squeeze(np.array(manhattan_dist))
-        min_dist = np.min(manhattan_dist)
-
-        condition = np.matrix(np.where(md_array == min_dist)).T
-        min_components = distance_components[condition].tolist()
-
-        if min_dist == 1:
-            min_dist = float(np.inf)
-        elif min_dist > 1:
-            if any(t in min_components for t in [[[min_dist, 0]], [[0, min_dist]]]):
-                min_dist += 1
-            else:
-                min_dist -= 1
-        else:
-            min_dist = float(min_dist)
-
-        total += min_dist
-    return total
 
 
 class BlokusCoverProblem(SearchProblem):
@@ -301,12 +270,13 @@ class ClosestLocationSearch:
 
 class MiniContestSearch:
     """
-    Implement your contest entry here
+    In this problem you have to cover all given positions on the board.
     """
-
-    def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=(0, 0)):
+    def __init__(self, board_w, board_h, piece_list, starting_point=(0, 0), targets=[(0, 0)]):
         self.targets = targets.copy()
+        self.expanded = 0
         self.board = Board(board_w, board_h, 1, piece_list, starting_point)
+        self.starting_point = starting_point
 
     def get_start_state(self):
         """
@@ -314,7 +284,113 @@ class MiniContestSearch:
         """
         return self.board
 
-    def solve(self):
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+    def get_successors(self, state):
+        """
+        state: Search state
+        For a given state, this should return a list of triples,
+        (successor, action, stepCost), where 'successor' is a
+        successor to the current state, 'action' is the action
+        required to get there, and 'stepCost' is the incremental
+        cost of expanding to that successor
+        """
+        # Note that for the search problem, there is only one player - #0
+        self.expanded = self.expanded + 1
+        return [(state.do_move(0, move), move, move.piece.get_num_tiles()) for move in state.get_legal_moves(0)]
 
+    def is_goal_state(self, state):
+        return -1 not in [state.get_position(y, x) for x, y in self.targets]
+
+    def find_closest_target(self, state, starting_point):
+        remaining_targets = [(x, y) for x, y in self.targets if state.get_position(y, x) == -1]
+        if not remaining_targets:
+            return -1, -1
+        distances = np.zeros(len(remaining_targets))
+        for i, target in enumerate(remaining_targets):
+            distance_components = (starting_point[0] - target[0], starting_point[1] - target[1])
+            distance = abs(distance_components[0]) + abs(distance_components[1])
+            distances[i] = distance
+        idx = np.argmin(distances)
+        return remaining_targets[idx]
+
+    def heuristic(self, state, targets):
+        tiles = np.matrix(np.where(state.state == 0)).T
+        total = 0
+        for target in targets:
+            distance_component = abs(tiles - target)  # for matrix notation of Manhattan distance
+            manhattan_dist = distance_component[:, 0] + distance_component[:, 1]
+            md_array = np.squeeze(np.array(manhattan_dist))
+            min_dist = np.min(manhattan_dist)
+            condition = np.matrix(np.where(md_array == min_dist)).T
+            min_components = distance_component[condition].tolist()
+
+            if min_dist == 1:
+                min_dist = float(np.inf)
+
+            elif min_dist > 1:
+                if any(t in min_components for t in [[min_dist, 0], [0, min_dist]]):
+                    min_dist += 1
+                else:
+                    min_dist -= 1
+
+            total += min_dist
+        return total
+
+    def state_symmetry(self, state):
+        """
+        Returns all possible rotations and flips of the board.
+        """
+        variations = {}
+
+        # rotate board
+        for k in range(4):
+            num_state = np.rot90(state.state, k=k)
+
+            str_state = tuple(map(tuple, num_state)) # tuple(num_state) # self.state_to_string(num_state)
+            if variations.get(str_state) is None:
+                variations.update({str_state: True})
+            else:
+                pass
+
+        # flip board and rotate the flipped board
+        flipped_state = np.flip(num_state, axis=0)
+        for k in range(4):
+            num_state = np.rot90(flipped_state, k=k)
+            str_state = tuple(map(tuple, num_state))
+            if variations.get(str_state) is None:
+                variations.update({str_state: True})
+            else:
+                pass
+
+        return variations
+
+    def solve(self):
+        """
+        This method returns a sequence of actions that covers all target locations on the board.
+        """
+        fringe = util.PriorityQueue()
+        start_state = self.get_start_state()
+        fringe.push(Node(start_state, None, None, 0), 0)
+        closed = {}
+
+        while not fringe.isEmpty():
+            current_node = fringe.pop()
+            variations = self.state_symmetry(current_node.state)
+
+            if self.is_goal_state(current_node.state):
+                print('Reach Goal')
+                return current_node.get_action_trace_back()
+
+            elif all(closed.get(key) is None for key in variations.keys()):
+                # only expand node if none of its variations (rotations and flips) were discovered yet
+                successors = self.get_successors(current_node.state)
+                for successor, action, step_cost in successors:
+                    cost_so_far = current_node.cost_so_far + step_cost
+                    fringe.push(
+                        Node(successor, action, current_node, cost_so_far),
+                        cost_so_far + self.heuristic(successor, self.targets)
+                    )
+
+                    closed[list(variations.keys())[0]] = True
+
+        print('Cannot solve the problem')
+        return []
