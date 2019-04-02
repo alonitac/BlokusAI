@@ -226,14 +226,21 @@ class ClosestLocationSearch:
     #     del self.reduced_targets[idx]
     #     print("self.reduced_targets after deletion", self.reduced_targets)
     #     print("current_target, targets:", self.current_target, self.reduced_targets)
-    def find_closest_target(self, state, x, y):
-        # check for non reached targets
-        # computer the nearest to (x, y)
-        return 0, 0
 
-    def heuristic(self, state):
+    def find_closest_target(self, state, starting_point):
+        remaining_targets = [(x, y) for x, y in self.targets if state.get_position(y, x) == -1]
+        distances = np.zeros(len(remaining_targets))
+        for i, target in enumerate(remaining_targets):
+            distance_components = (starting_point[0] - target[0], starting_point[1] - target[1])
+            distance = abs(distance_components[0]) + abs(distance_components[1])
+            distances[i] = distance
+        idx = np.argmin(distances)
+        return remaining_targets[idx]
+
+
+    def heuristic(self, state, target):
         tiles = np.matrix(np.where(state.state == 0)).T
-        dist = tiles - state.params['target']
+        dist = tiles - target
         return min(abs(dist[:, 0]) + abs(dist[:, 1]))
 
     def solve(self):
@@ -258,7 +265,7 @@ class ClosestLocationSearch:
         fringe = util.PriorityQueue()
         start_state = self.get_start_state()
         fringe.push(Node(start_state, None, None, 0,
-                         params={'target:': self.find_closest_target(start_state, self.starting_point)}), 0)
+                         params={'target': self.find_closest_target(start_state, self.starting_point)}), 0)
         closed = {}
 
         while not fringe.isEmpty():
@@ -276,7 +283,7 @@ class ClosestLocationSearch:
                     cost_so_far = current_node.cost_so_far + step_cost
                     fringe.push(
                         Node(successor, action, current_node, cost_so_far, params={'target': (x, y)}),
-                        cost_so_far + self.heuristic(successor)
+                        cost_so_far + self.heuristic(successor, (x, y))
                     )
 
                     closed[current_node.state] = True
