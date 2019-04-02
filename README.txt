@@ -3,12 +3,13 @@
 *****
 Comments:
 
-## blokus_corner_heuristic
+## blokus_cover_heuristic
 
 To calculate the value of the heuristics we do the following steps:
 Note the following terminology:
-    - targets: corner of the board
+    - targets: targets that need to be covered to reach a goal state
     - corner : corner of the tiles
+    - edge   : edge of the tile or tile pattern
 
 for every target:
     calculate Manhattan distance from each covered location to target
@@ -32,10 +33,10 @@ heuristic_value = sum of minimum distances
           need to change: min_dist = min_dist - 1 to keep min_dist a admissible estimator of the cost
 
 
-## blokus_cover_heuristic
+## blokus_corners_heuristic
 
-The cover heuristic works in the same way like the corner heuristic only that now the targets are variable
-(amount and location) and not given through the board (where targets = corners).
+The corners heuristic works in the same way like the cover heuristic only that now the targets are the corners of the
+board.
 
 
 ## Sub-Optimal Search
