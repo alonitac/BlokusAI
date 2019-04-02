@@ -111,9 +111,25 @@ def blokus_corners_heuristic(state, problem):
     tiles = np.matrix(np.where(state.state == 0)).T
     corners = [(0, 0), (0, state.board_w - 1), (state.board_h - 1, 0), (state.board_w - 1, state.board_h - 1)]
     total = 0
-    for t in corners:
-        dist = tiles - t  # for matrix notation of Manhattan distance
-        min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+    for target in corners:
+        distance_components = abs(tiles - target)  # for matrix notation of Manhattan distance
+        manhattan_dist = distance_components[:, 0] + distance_components[:, 1]
+        md_array = np.squeeze(np.array(manhattan_dist))
+        min_dist = np.min(manhattan_dist)
+
+        condition = np.matrix(np.where(md_array == min_dist)).T
+        min_components = distance_components[condition].tolist()
+
+        if min_dist == 1:
+            min_dist = float(np.inf)
+        elif min_dist > 1:
+            if any(t in min_components for t in [[[min_dist, 0]], [[0, min_dist]]]):
+                min_dist += 1
+            else:
+                min_dist -= 1
+        else:
+            min_dist = float(min_dist)
+
         total += min_dist
     return total
 
@@ -160,9 +176,23 @@ class BlokusCoverProblem(SearchProblem):
 def blokus_cover_heuristic(state, problem):
     tiles = np.matrix(np.where(state.state == 0)).T
     total = 0
-    for t in problem.targets:
-        dist = tiles - t  # for matrix notation of Manhattan distance
-        min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
+    for target in problem.targets:
+        distance_component = abs(tiles - target)  # for matrix notation of Manhattan distance
+        manhattan_dist = distance_component[:, 0] + distance_component[:, 1]
+        md_array = np.squeeze(np.array(manhattan_dist))
+        min_dist = np.min(manhattan_dist)
+        condition = np.matrix(np.where(md_array == min_dist)).T
+        min_components = distance_component[condition].tolist()
+
+        if min_dist == 1:
+            min_dist = float(np.inf)
+
+        elif min_dist > 1:
+            if any(t in min_components for t in [[min_dist, 0], [0, min_dist]]):
+                min_dist += 1
+            else:
+                min_dist -= 1
+
         total += min_dist
     return total
 
@@ -187,7 +217,6 @@ class ClosestLocationSearch:
     def get_successors(self, state):
         """
         state: Search state
-
         For a given state, this should return a list of triples,
         (successor, action, stepCost), where 'successor' is a
         successor to the current state, 'action' is the action
@@ -200,32 +229,6 @@ class ClosestLocationSearch:
 
     def is_goal_state(self, state):
         return -1 not in [state.get_position(y, x) for x, y in self.targets]
-
-    # def find_first_target(self):
-    #     xsp, ysp = self.starting_point
-    #     dist = np.array([(x - xsp, y - ysp) for x, y in self.reduced_targets])
-    #     manhattan_dist = abs(dist[:, 0]) + abs(dist[:, 1]) # min_dist to target, = 0 if target is covered
-    #     idx = np.argmin(manhattan_dist)
-    #     self.current_target = self.reduced_targets[idx]
-    #     del self.reduced_targets[idx]
-    #     print("Found first target:", self.current_target, self.reduced_targets)
-    #
-    #
-    # def find_closest_target(self, state):
-    #     tiles = np.matrix(np.where(state.state == 0)).T
-    #     distances = np.zeros(len(self.reduced_targets))
-    #     for i, t in enumerate(self.reduced_targets):
-    #         dist = tiles - t  # for matrix notation of Manhattan distance
-    #         min_dist = min(abs(dist[:, 0]) + abs(dist[:, 1]))  # min_dist to target, = 0 if target is covered
-    #         distances[i] = min_dist
-    #     print("Distances to targets: ", distances)
-    #     idx = np.argmin(distances)
-    #     print("Choose target with idx ", idx, self.reduced_targets[idx])
-    #     self.current_target = self.reduced_targets[idx]
-    #     print("self.reduced_targets before deletion", self.reduced_targets)
-    #     del self.reduced_targets[idx]
-    #     print("self.reduced_targets after deletion", self.reduced_targets)
-    #     print("current_target, targets:", self.current_target, self.reduced_targets)
 
     def find_closest_target(self, state, starting_point):
         remaining_targets = [(x, y) for x, y in self.targets if state.get_position(y, x) == -1]
@@ -241,8 +244,23 @@ class ClosestLocationSearch:
 
     def heuristic(self, state, target):
         tiles = np.matrix(np.where(state.state == 0)).T
-        dist = tiles - target
-        return int(min(abs(dist[:, 0]) + abs(dist[:, 1])))
+        distance_component = abs(tiles - target)  # for matrix notation of Manhattan distance
+        manhattan_dist = distance_component[:, 0] + distance_component[:, 1]
+        md_array = np.squeeze(np.array(manhattan_dist))
+        min_dist = np.min(manhattan_dist)
+        condition = np.matrix(np.where(md_array == min_dist)).T
+        min_components = distance_component[condition].tolist()
+
+        if min_dist == 1:
+            min_dist = float(np.inf)
+
+        elif min_dist > 1:
+            if any(t in min_components for t in [[min_dist, 0], [0, min_dist]]):
+                min_dist += 1
+            else:
+                min_dist -= 1
+
+        return min_dist
 
     def solve(self):
         """
@@ -250,17 +268,12 @@ class ClosestLocationSearch:
         This time we trade optimality for speed.
         Therefore, your agent should try and cover one target location at a time. Each time, aiming for the closest uncovered location.
         You may define helpful functions as you wish.
-
         Probably a good way to start, would be something like this --
-
         current_state = self.board.__copy__()
         backtrace = []
-
         while ....
-
             actions = set of actions that covers the closets uncovered target location
             add actions to backtrace
-
         return backtrace
         """
         fringe = util.PriorityQueue()
@@ -282,7 +295,7 @@ class ClosestLocationSearch:
                         successor_target = self.find_closest_target(successor, (x, y))
                         cost_so_far = 0
                         if successor_target == (-1, -1):
-                            return current_node.get_action_trace_back() +[action]
+                            return current_node.get_action_trace_back() + [action]
 
                     fringe.push(
                         Node(successor, action, current_node,
