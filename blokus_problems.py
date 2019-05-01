@@ -151,6 +151,8 @@ def blokus_cover_heuristic(state, problem):
     total = 0
     for target in problem.targets:
         distance_component = abs(tiles - target)  # for matrix notation of Manhattan distance
+        if distance_component.size == 0:
+            return float(np.inf)
         manhattan_dist = distance_component[:, 0] + distance_component[:, 1]
         md_array = np.squeeze(np.array(manhattan_dist))
         min_dist = np.min(manhattan_dist)
