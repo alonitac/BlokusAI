@@ -81,6 +81,8 @@ a shorter lookup time in the future.
 Dear course staff,
 
 we have an appeal to the auto-grading of the Blokus exercise.
+First a discussion about how we think the grading would have been more fair. The last paragraph explains, what we
+changed in the code to deal with the error that we got in the first submission.
 
 We got 3+5+1=9 points deducted because of the same error in our code. Whereas we understand why the auto-grader
 deducts the points because no result was delivered, we find it pretty exaggerated that we get punished for the
@@ -121,6 +123,9 @@ If you want, we can also meet and discuss it in person. Tuesday after the lectur
 And for our own interest: Can you also tell us, which exact settings you chose for the questions?
 Because when we run the commands from the instructions, the error does not appear. We can imagine it happening if the
 heuristic is calculated for an empty board. We added two lines that will prevent this error from happening.
+Now when the array of distances between the tiles and the targets is empty (if there was no target or no tiles to compute
+the distance between), then the heuristic returns infinity, which is bigger than every other distance (that are finite),
+so the search algorithm will still prefer to take an state where the heuristic could calculate an "actual" distance.
 
 Have a nice day,
 Alon and Franziska
